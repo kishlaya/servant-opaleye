@@ -56,36 +56,41 @@ type UserAPI = "users" :> Get '[JSON] [User]
 
 -- Action to be taken at endpoints 
 server :: Connection -> Server UserAPI
-server conn = fetchAll :<|> fetch :<|> create :<|> update :<|> delete 
-	where
-		fetchAll :: Handler [User]
-		fetchAll = do
-			rows <- liftIO (selectAllRows conn)
-			liftIO (print rows)
-			return (toUsers rows)
-		fetch :: [Char] -> Handler [User]
-		fetch s = do
-			rows <- liftIO (selectByName conn s)
-			liftIO (print rows)
-			return (toUsers rows)
-		create :: User -> Handler User
-		create x@(User n e a) = do
-			liftIO (insertRow conn (n, e, a))
-			rows <- liftIO (selectAllRows conn)
-			liftIO (print rows)
-			return x
-		update :: User -> Handler User
-		update x@(User n e a) = do
-			liftIO (updateRow conn (n, e, a))
-			rows <- liftIO (selectAllRows conn)
-			liftIO (print rows)
-			return x
-		delete :: User -> Handler User
-		delete x@(User n e a) = do
-			liftIO (deleteRow conn (n, e, a))
-			rows <- liftIO (selectAllRows conn)
-			liftIO (print rows)
-			return x
+server conn = fetchAll conn :<|> fetchUser conn :<|> create conn :<|> update conn :<|> delete conn 
+
+-- Endpoint function handlers
+fetchAll :: Connection -> Handler [User]
+fetchAll conn = do
+	rows <- liftIO (selectAllRows conn)
+	liftIO (print rows)
+	return (toUsers rows)
+
+fetchUser :: Connection -> [Char] -> Handler [User]
+fetchUser conn s = do
+	rows <- liftIO (selectByName conn s)
+	liftIO (print rows)
+	return (toUsers rows)
+
+create :: Connection -> User -> Handler User
+create conn x@(User n e a) = do
+	liftIO (insertRow conn (n, e, a))
+	rows <- liftIO (selectAllRows conn)
+	liftIO (print rows)
+	return x
+
+update :: Connection -> User -> Handler User
+update conn x@(User n e a) = do
+	liftIO (updateRow conn (n, e, a))
+	rows <- liftIO (selectAllRows conn)
+	liftIO (print rows)
+	return x
+
+delete :: Connection -> User -> Handler User
+delete conn x@(User n e a) = do
+	liftIO (deleteRow conn (n, e, a))
+	rows <- liftIO (selectAllRows conn)
+	liftIO (print rows)
+	return x
 
 
 -- DB Manipulation
