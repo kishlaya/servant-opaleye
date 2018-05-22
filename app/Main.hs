@@ -21,6 +21,7 @@ import Network.Wai.Handler.Warp
 import Data.Char (toLower)
 import Control.Monad.Reader hiding (ask)
 import Control.Monad.Trans.Reader
+import Data.Pool
 
 -- Postgresql Requires
 import Opaleye
@@ -29,13 +30,41 @@ import Data.Profunctor.Product (p3)
 import Control.Arrow hiding (app)
 import Control.Monad.IO.Class
 
+-- Config
+serverport = 8081
+dbHostname = "localhost"
+dbPort = 5432
+dbName = "mydb"
+dbUsername = "b2b"
+dbPassword = "b2b"
 
 main :: IO ()
+main = getPool >>= flip withResource (\conn -> run serverport (app conn))
+{-
 main = do
-    conn <- connect ConnectInfo{connectHost="localhost", connectPort=5432, connectDatabase="mydb", connectPassword="b2b", connectUser="b2b"}
-    allRows <- selectAllRows conn
-    print allRows
-    run 8081 (serve (Proxy :: Proxy UserAPI) (enter (NT (naturalTransformer conn)) server))
+    pool <- getPool
+    withResource pool (\conn -> run 8081 (app conn))
+-}
+
+app :: Connection -> Application
+app conn = serve (Proxy :: Proxy UserAPI) (enter (NT (naturalTransformer conn)) server)
+
+getPool :: IO (Pool Connection)
+getPool = createPool
+    connectDb
+    close
+    1                         -- number of stripes
+    (fromRational 10)         -- number of seconds a connection should remain in pool
+    10                        -- max number of connections per stripe.
+    where
+        connectDb :: IO Connection
+        connectDb = connect ConnectInfo {
+                        connectHost=dbHostname,
+                        connectPort=dbPort,
+                        connectDatabase=dbName,
+                        connectPassword=dbPassword,
+                        connectUser=dbUsername
+                    }
 
 
 -- User type
