@@ -30,6 +30,9 @@ dependencies:
 - postgresql-simple
 - product-profunctors
 - text
+- mtl
+- transformers
+- resource-pool
 
 
 library:
